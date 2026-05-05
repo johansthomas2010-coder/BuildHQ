@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BuildHQ – Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #0A244A;
+      --accent: #F97316;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --bg: #F4F6FA;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --nav-h: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); max-width: 480px; margin: 0 auto; min-height: 100vh; }
+
+    /* HEADER */
+    .app-header { background: var(--primary); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .logo { color: white; font-size: 19px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .logo-box { background: var(--accent); border-radius: 7px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+    .demo-badge { background: var(--accent); color: white; font-size: 9px; font-weight: 800; letter-spacing: 1px; padding: 2px 7px; border-radius: 20px; }
+    .site-pill { background: rgba(255,255,255,0.15); color: white; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
+
+    /* NAV */
+    .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: white; border-top: 1px solid var(--border); display: flex; height: var(--nav-h); z-index: 100; }
+    .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: none; border: none; cursor: pointer; color: var(--muted); font-size: 10px; font-weight: 600; padding: 6px 2px; transition: color 0.2s; font-family: inherit; }
+    .nav-btn svg { width: 20px; height: 20px; }
+    .nav-btn.active { color: var(--primary); }
+    .nav-btn.active svg { stroke: var(--accent); }
+
+    /* MAIN */
+    main { padding: 16px 16px calc(var(--nav-h) + 16px); }
+
+    /* VIEWS */
+    .view { display: none; animation: fadeIn 0.2s ease; }
+    .view.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* CARDS */
+    .card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    .section-label { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 5px; }
+
+    /* TYPOGRAPHY */
+    .page-title { font-size: 22px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .page-sub { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+
+    /* BUTTONS */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 11px 18px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: all 0.18s; font-family: inherit; }
+    .btn svg { width: 16px; height: 16px; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: #0f3570; }
+    .btn-accent { background: var(--accent); color: white; }
+    .btn-accent:hover { background: #ea6c00; }
+    .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text); }
+    .btn-danger-soft { background: #fee2e2; color: var(--danger); border: none; }
+    .btn-success-soft { background: #dcfce7; color: var(--success); border: none; }
+    .btn-full { width: 100%; justify-content: center; padding: 14px; font-size: 15px; }
+    .btn-icon { width: 32px; height: 32px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; font-family: inherit; }
+    .btn-icon svg { width: 15px; height: 15px; }
+    .btn-icon.del { background: #fee2e2; color: var(--danger); }
+
+    /* INPUTS */
+    .field { margin-bottom: 13px; }
+    .field label { font-size: 12px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 5px; }
+    .inp { width: 100%; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; background: white; color: var(--text); }
+    .inp:focus { border-color: var(--primary); }
+    textarea.inp { resize: none; }
+    .inp-row { display: flex; gap: 8px; }
+    .inp-row .inp { flex: 1; }
+
+    /* STAT CHIPS */
+    .stats-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .stat { flex: 1; background: white; border-radius: 12px; padding: 10px 6px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    .stat-val { font-size: 20px; font-weight: 800; color: var(--primary); }
+    .stat-lbl { font-size: 10px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+
+    /* DASH CARDS */
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .dash-card { background: white; border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    .dash-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .dash-icon svg { width: 22px; height: 22px; stroke: white; }
+    .di-blue { background: var(--primary); }
+    .di-orange { background: var(--accent); }
+    .dash-label { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .dash-val { font-size: 22px; font-weight: 800; }
+
+    /* DAY BANNER */
+    .day-banner { border-radius: 14px; padding: 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .day-off { background: #f8fafc; border: 2px dashed var(--border); }
+    .day-on { background: linear-gradient(135deg, var(--primary), #1e3a6e); }
+    .day-label { font-size: 12px; font-weight: 700; }
+    .day-date { font-size: 18px; font-weight: 800; margin-top: 2px; }
+
+    /* ACTIVITY */
+    .act-list { list-style: none; }
+    .act-list li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .act-list li:last-child { border-bottom: none; }
+    .act-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .act-time { font-size: 11px; color: var(--muted); }
+
+    /* WORKER ROWS */
+    .w-row { display: flex; align-items: center; gap: 11px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+    .w-row:last-child { border-bottom: none; }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .w-name { font-weight: 600; font-size: 14px; }
+    .w-sub { font-size: 11px; color: var(--muted); }
+
+    /* ATTENDANCE BADGE */
+    .att { font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 20px; cursor: pointer; border: none; font-family: inherit; flex-shrink: 0; }
+    .att-present { background: #dcfce7; color: var(--success); }
+    .att-absent  { background: #fee2e2; color: var(--danger); }
+    .att-half    { background: #fef3c7; color: var(--warning); }
+
+    /* MATERIAL ROWS */
+    .mat-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .mat-row:last-child { border-bottom: none; }
+    .mat-ico { width: 36px; height: 36px; background: #f0f4ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .mat-ico svg { width: 18px; height: 18px; stroke: var(--primary); }
+    .mat-name { font-weight: 600; font-size: 14px; }
+    .mat-note { font-size: 11px; color: var(--muted); }
+    .chip { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .chip-orange { background: #fff1e6; color: var(--accent); }
+
+    /* LOG ROWS */
+    .log-row { display: flex; gap: 11px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .log-row:last-child { border-bottom: none; }
+    .log-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .log-work { font-size: 13px; font-weight: 600; }
+    .log-time { font-size: 11px; color: var(--muted); }
+    .log-cat { background: #f0f4ff; color: var(--primary); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+
+    /* EMPTY STATE */
+    .empty { text-align: center; padding: 28px 16px; color: var(--muted); }
+    .empty svg { width: 42px; height: 42px; margin-bottom: 8px; opacity: 0.35; display: block; margin-inline: auto; }
+
+    /* CHART */
+    .chart-wrap { position: relative; height: 180px; }
+
+    /* TOAST */
+    #toast { position: fixed; bottom: calc(var(--nav-h) + 12px); left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+    #toast.show { opacity: 1; }
+
+    /* MODAL */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: flex-end; justify-content: center; }
+    .overlay.open { display: flex; }
+    .sheet { background: white; border-radius: 20px 20px 0 0; padding: 22px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; }
+    .sheet-title { font-size: 18px; font-weight: 800; color: var(--primary); }
+
+    /* CONFIRM DIALOG */
+    .confirm-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:400; align-items:center; justify-content:center; padding:20px; }
+    .confirm-overlay.open { display:flex; }
+    .confirm-box { background:white; border-radius:16px; padding:22px; width:100%; max-width:320px; text-align:center; }
+    .confirm-box h3 { font-size:16px; font-weight:800; color:var(--primary); margin-bottom:8px; }
+    .confirm-box p { font-size:13px; color:var(--muted); margin-bottom:20px; }
+    .confirm-btns { display:flex; gap:10px; }
+
+    /* WA PREVIEW */
+    .wa-preview { background:#e9f5e9; border-radius:12px; padding:14px; margin-bottom:16px; font-family:monospace; font-size:12.5px; line-height:1.7; white-space:pre-wrap; word-break:break-word; border-left:4px solid #25D366; max-height:240px; overflow-y:auto; }
+
+    /* QUICK ACTIONS */
+    .quick-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .quick-btn { background:rgba(255,255,255,0.15); color:white; border:none; border-radius:10px; padding:12px 8px; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; font-family:inherit; transition:background 0.2s; }
+    .quick-btn:hover { background:rgba(255,255,255,0.25); }
+    .quick-btn svg { width:16px; height:16px; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="app-header">
+  <div class="logo">
+    <div class="logo-box">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    BuildHQ
+    <span class="demo-badge">DEMO</span>
+  </div>
+  <div class="site-pill">
+    <i data-lucide="map-pin" style="width:12px;height:12px;stroke:white;"></i>
+    Site Alpha
+  </div>
+</div>
+
+<!-- MAIN -->
+<main>
+
+  <!-- ── HOME ── -->
+  <section id="view-home" class="view active">
+    <!-- Day Banner -->
+    <div id="day-banner" class="day-banner day-off">
+      <div>
+        <div class="day-label" id="day-label" style="color:var(--muted);">DAY NOT STARTED</div>
+        <div class="day-date" id="day-date" style="color:var(--primary);"></div>
+      </div>
+      <button class="btn btn-primary" id="btn-day" onclick="toggleDay()">
+        <i data-lucide="play-circle"></i> Start Day
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val" id="s-present">0</div><div class="stat-lbl">Present</div></div>
+      <div class="stat"><div class="stat-val" id="s-absent">0</div><div class="stat-lbl">Absent</div></div>
+      <div class="stat"><div class="stat-val" id="s-mats">0</div><div class="stat-lbl">Materials</div></div>
+      <div class="stat"><div class="stat-val" id="s-logs">0</div><div class="stat-lbl">Logs</div></div>
+    </div>
+
+    <!-- Dash cards -->
+    <div class="dash-grid">
+      <div class="dash-card">
+        <div class="dash-icon di-blue"><i data-lucide="users"></i></div>
+        <div><div class="dash-label">Workers Today</div><div class="dash-val" id="d-workers">0/0</div></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-icon di-orange"><i data-lucide="package"></i></div>
+        <div><div class="dash-label">Materials Used</div><div class="dash-val" id="d-mats">0</div></div>
+      </div>
+    </div>
+
+    <!-- Activity -->
+    <div class="card">
+      <div class="section-label"><i data-lucide="activity" style="width:13px;height:13px;"></i> Today's Activity</div>
+      <ul class="act-list" id="act-list">
+        <li style="color:var(--muted);font-size:13px;padding:10px 0;">No activity yet — start the day to begin.</li>
+      </ul>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="card" style="background:linear-gradient(135deg,#0A244A,#1e3a6e);">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);letter-spacing:1px;margin-bottom:10px;">QUICK ACTIONS</div>
+      <div class="quick-grid">
+        <button class="quick-btn" onclick="nav('view-attendance')"><i data-lucide="clipboard-check"></i> Attendance</button>
+        <button class="quick-btn" onclick="nav('view-materials')"><i data-lucide="package"></i> Materials</button>
+        <button class="quick-btn" onclick="nav('view-logs')"><i data-lucide="clipboard-list"></i> Daily Log</button>
+        <button class="quick-btn" onclick="nav('view-workers')"><i data-lucide="users"></i> Workers</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ATTENDANCE ── -->
+  <section id="view-attendance" class="view">
+    <div class="page-title">Attendance</div>
+    <div class="page-sub">Tap a badge to cycle: Absent → Present → Half Day</div>
+
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val" id="a-present" style="color:var(--success);">0</div><div class="stat-lbl">Present</div></div>
+      <div class="stat"><div class="stat-val" id="a-absent" style="color:var(--danger);">0</div><div class="stat-lbl">Absent</div></div>
+      <div class="stat"><div class="stat-val" id="a-half" style="color:var(--warning);">0</div><div class="stat-lbl">Half Day</div></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-success-soft btn-full" style="flex:1;" onclick="markAll('present')"><i data-lucide="check-circle"></i> All Present</button>
+      <button class="btn btn-danger-soft btn-full" style="flex:1;" onclick="markAll('absent')"><i data-lucide="x-circle"></i> All Absent</button>
+    </div>
+
+    <div class="card" id="att-list"></div>
+  </section>
+
+  <!-- ── WORKERS ── -->
+  <section id="view-workers" class="view">
+    <div class="page-title">Manage Workers</div>
+    <div class="page-sub">Add or remove workers from the roster</div>
+
+    <div class="card">
+      <div class="section-label"><i data-lucide="user-plus" style="width:13px;height:13px;"></i> Add New Worker</div>
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="w-name" class="inp" placeholder="e.g. Rajan Kumar">
+      </div>
+      <div class="inp-row" style="margin-bottom:13px;">
+        <select id="w-trade" class="inp">
+          <option value="">Trade / Role</option>
+          <option>Mason</option><option>Carpenter</option><option>Electrician</option>
+          <option>Plumber</option><option>Helper</option><option>Supervisor</option>
+        </select>
+        <input type="tel" id="w-phone" class="inp" placeholder="Phone (optional)">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addWorker()">
+        <i data-lucide="user-plus"></i> Add Worker
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="section-label"><i data-lucide="users" style="width:13px;height:13px;"></i> All Workers (<span id="w-count">0</span>)</div>
+      <div id="w-list"></div>
+    </div>
+  </section>
+
+  <!-- ── MATERIALS ── -->
+  <section id="view-materials" class="view">
+    <div class="page-title">Materials Used</div>
+    <div class="page-sub">Track daily material consumption</div>
+
+    <div class="card">
+      <div class="section-label"><i data-lucide="plus-circle" style="width:13px;height:13px;"></i> Log Material</div>
+      <div class="field">
+        <label>Material Type</label>
+        <select id="mat-type" class="inp">
+          <option value="">Select material…</option>
+          <option>Cement (Bags)</option><option>Steel (Kg)</option>
+          <option>Bricks (Pieces)</option><option>Sand (Tons)</option>
+          <option>Gravel (Tons)</option><option>Paint (Litre)</option>
+          <option>Tiles (Boxes)</option><option>Pipes (Metres)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Quantity</label>
+        <input type="number" id="mat-qty" class="inp" placeholder="Enter quantity" min="1">
+      </div>
+      <div class="field">
+        <label>Note (optional)</label>
+        <input type="text" id="mat-note" class="inp" placeholder="e.g. Used for column 3">
+      </div>
+      <button class="btn btn-accent btn-full" onclick="addMaterial()">
+        <i data-lucide="plus"></i> Add Material
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="section-label"><i data-lucide="list" style="width:13px;height:13px;"></i> Today's Usage</div>
+      <div id="mat-list"></div>
+    </div>
+  </section>
+
+  <!-- ── LOGS ── -->
+  <section id="view-logs" class="view">
+    <div class="page-title">Daily Logs</div>
+    <div class="page-sub">Record site progress and issues</div>
+
+    <div class="card">
+      <div class="section-label"><i data-lucide="edit-3" style="width:13px;height:13px;"></i> New Log Entry</div>
+      <div class="field">
+        <label>Work Completed</label>
+        <input type="text" id="log-work" class="inp" placeholder="e.g. Column pouring – 3rd floor">
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select id="log-cat" class="inp">
+          <option>Progress</option><option>Issue</option>
+          <option>Inspection</option><option>Delivery</option><option>Safety</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Additional Notes</label>
+        <textarea id="log-notes" class="inp" rows="2" placeholder="Any extra observations…"></textarea>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addLog()">
+        <i data-lucide="save"></i> Submit Log
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="section-label"><i data-lucide="clock" style="width:13px;height:13px;"></i> Log History</div>
+      <div id="log-list"></div>
+    </div>
+  </section>
+
+  <!-- ── SUMMARY ── -->
+  <section id="view-summary" class="view">
+    <div class="page-title">Site Summary</div>
+    <div class="page-sub">Overview of today's operations</div>
+
+    <div class="card" style="background:linear-gradient(135deg,#0A244A,#1e3a6e);color:white;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;opacity:0.65;letter-spacing:1px;margin-bottom:6px;">TODAY</div>
+      <div style="font-size:18px;font-weight:800;" id="sum-date"></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val" id="sum-present">0</div><div class="stat-lbl">Present</div></div>
+      <div class="stat"><div class="stat-val" id="sum-absent">0</div><div class="stat-lbl">Absent</div></div>
+      <div class="stat"><div class="stat-val" id="sum-mats">0</div><div class="stat-lbl">Materials</div></div>
+      <div class="stat"><div class="stat-val" id="sum-logs">0</div><div class="stat-lbl">Logs</div></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label"><i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Attendance</div>
+      <div class="chart-wrap"><canvas id="att-chart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label"><i data-lucide="pie-chart" style="width:13px;height:13px;"></i> Materials</div>
+      <div class="chart-wrap"><canvas id="mat-chart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label"><i data-lucide="package" style="width:13px;height:13px;"></i> Materials Logged</div>
+      <div id="sum-mat-items"><div style="color:var(--muted);font-size:13px;">None logged.</div></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label"><i data-lucide="clipboard-list" style="width:13px;height:13px;"></i> Logs Today</div>
+      <div id="sum-log-items"><div style="color:var(--muted);font-size:13px;">None logged.</div></div>
+    </div>
+
+    <button class="btn btn-full" style="background:#25D366;color:white;margin-bottom:12px;font-size:15px;" onclick="openWA()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white" style="flex-shrink:0;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.004 2C6.477 2 2 6.477 2 12.004c0 1.77.465 3.428 1.277 4.868L2 22l5.265-1.265A9.955 9.955 0 0012.004 22C17.527 22 22 17.523 22 12.004 22 6.477 17.527 2 12.004 2zm0 18.214a8.209 8.209 0 01-4.195-1.148l-.301-.179-3.124.751.779-3.048-.196-.314A8.2 8.2 0 013.786 12c0-4.535 3.687-8.221 8.222-8.221 4.533 0 8.217 3.686 8.217 8.221 0 4.535-3.684 8.214-8.221 8.214z"/></svg>
+      Share Day Summary on WhatsApp
+    </button>
+  </section>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-view="view-home" onclick="nav('view-home')">
+    <i data-lucide="layout-dashboard"></i><span>Home</span>
+  </button>
+  <button class="nav-btn" data-view="view-attendance" onclick="nav('view-attendance')">
+    <i data-lucide="clipboard-check"></i><span>Attendance</span>
+  </button>
+  <button class="nav-btn" data-view="view-workers" onclick="nav('view-workers')">
+    <i data-lucide="users"></i><span>Workers</span>
+  </button>
+  <button class="nav-btn" data-view="view-materials" onclick="nav('view-materials')">
+    <i data-lucide="package"></i><span>Materials</span>
+  </button>
+  <button class="nav-btn" data-view="view-logs" onclick="nav('view-logs')">
+    <i data-lucide="clipboard-list"></i><span>Logs</span>
+  </button>
+  <button class="nav-btn" data-view="view-summary" onclick="nav('view-summary')">
+    <i data-lucide="bar-chart-2"></i><span>Summary</span>
+  </button>
+</nav>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3 id="confirm-title">Remove Worker?</h3>
+    <p id="confirm-msg">This action cannot be undone.</p>
+    <div class="confirm-btns">
+      <button class="btn btn-outline btn-full" onclick="confirmResolve(false)">Cancel</button>
+      <button class="btn btn-danger-soft btn-full" onclick="confirmResolve(true)">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- WHATSAPP MODAL -->
+<div class="overlay" id="wa-overlay">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="background:#25D366;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.004 2C6.477 2 2 6.477 2 12.004c0 1.77.465 3.428 1.277 4.868L2 22l5.265-1.265A9.955 9.955 0 0012.004 22C17.527 22 22 17.523 22 12.004 22 6.477 17.527 2 12.004 2zm0 18.214a8.209 8.209 0 01-4.195-1.148l-.301-.179-3.124.751.779-3.048-.196-.314A8.2 8.2 0 013.786 12c0-4.535 3.687-8.221 8.222-8.221 4.533 0 8.217 3.686 8.217 8.221 0 4.535-3.684 8.214-8.221 8.214z"/></svg>
+        </div>
+        <div class="sheet-title">WhatsApp Summary</div>
+      </div>
+      <button style="background:none;border:none;cursor:pointer;color:var(--muted);" onclick="closeWA()">
+        <i data-lucide="x" style="width:20px;height:20px;"></i>
+      </button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Day-end report ready to share</p>
+    <div class="wa-preview" id="wa-preview"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-outline" style="flex:1;justify-content:center;" onclick="copyWA()">
+        <i data-lucide="copy"></i> Copy
+      </button>
+      <button class="btn" style="flex:2;justify-content:center;background:#25D366;color:white;" onclick="sendWA()">
+        <i data-lucide="send"></i> Send via WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ STATE ═══════════════════════════════════════════════════════════════════
+const S = {
+  dayOn: false,
+  nextId: 5,
+  workers: [
+    { id:1, name:'Rajan Kumar',  trade:'Mason',       phone:'9876543210', status:'absent' },
+    { id:2, name:'Suresh Nair',  trade:'Carpenter',   phone:'9123456789', status:'absent' },
+    { id:3, name:'Anoop Varma',  trade:'Helper',      phone:'9988776655', status:'absent' },
+    { id:4, name:'Priya Menon',  trade:'Electrician', phone:'9000112233', status:'absent' },
+  ],
+  materials: [],
+  logs: [],
+  activity: [],
+};
+
+const LOG_COLORS = { Progress:'#16a34a', Issue:'#dc2626', Inspection:'#0A244A', Delivery:'#F97316', Safety:'#d97706' };
+
+// ═══ HELPERS ═════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const nowStr = () => new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function pushAct(text, color = '#F97316') {
+  S.activity.unshift({ text, time: nowStr(), color });
+  renderActivity();
+}
+
+function initials(name) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+}
+
+// ═══ NAVIGATION ══════════════════════════════════════════════════════════════
+function nav(viewId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  $(viewId).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === viewId));
+  if (viewId === 'view-summary') renderSummary();
+  window.scrollTo(0, 0);
+}
+
+// ═══ DAY TOGGLE ══════════════════════════════════════════════════════════════
+function toggleDay() {
+  S.dayOn = !S.dayOn;
+  const banner = $('day-banner');
+  const btn    = $('btn-day');
+  const lbl    = $('day-label');
+  const date   = $('day-date');
+  if (S.dayOn) {
+    banner.className = 'day-banner day-on';
+    lbl.style.color  = 'rgba(255,255,255,0.7)';
+    lbl.textContent  = 'DAY IN PROGRESS';
+    date.style.color = 'white';
+    btn.innerHTML    = '<i data-lucide="stop-circle"></i> End Day';
+    btn.style.background = '#dc2626';
+    pushAct('Day started at ' + nowStr(), '#16a34a');
+    toast('✅ Day started!');
+  } else {
+    banner.className = 'day-banner day-off';
+    lbl.style.color  = 'var(--muted)';
+    lbl.textContent  = 'DAY ENDED';
+    date.style.color = 'var(--primary)';
+    btn.innerHTML    = '<i data-lucide="play-circle"></i> Start Day';
+    btn.style.background = '';
+    pushAct('Day ended at ' + nowStr(), '#dc2626');
+    toast('🏁 Day ended!');
+    setTimeout(openWA, 700);
+  }
+  lucide.createIcons();
+  refreshStats();
+}
+
+// ═══ STATS ═══════════════════════════════════════════════════════════════════
+function refreshStats() {
+  const present = S.workers.filter(w => w.status === 'present').length;
+  const absent  = S.workers.filter(w => w.status === 'absent').length;
+  const half    = S.workers.filter(w => w.status === 'half').length;
+
+  $('s-present').textContent = present;
+  $('s-absent').textContent  = absent;
+  $('s-mats').textContent    = S.materials.length;
+  $('s-logs').textContent    = S.logs.length;
+  $('d-workers').textContent = `${present}/${S.workers.length}`;
+  $('d-mats').textContent    = S.materials.length;
+
+  $('a-present').textContent = present;
+  $('a-absent').textContent  = absent;
+  $('a-half').textContent    = half;
+}
+
+// ═══ ACTIVITY ════════════════════════════════════════════════════════════════
+function renderActivity() {
+  const el = $('act-list');
+  if (!S.activity.length) {
+    el.innerHTML = '<li style="color:var(--muted);font-size:13px;padding:10px 0;">No activity yet.</li>';
+    return;
+  }
+  el.innerHTML = S.activity.slice(0, 8).map(a => `
+    <li>
+      <span class="act-dot" style="background:${a.color};"></span>
+      <div><div style="font-size:13px;font-weight:500;">${a.text}</div><div class="act-time">${a.time}</div></div>
+    </li>`).join('');
+}
+
+// ═══ ATTENDANCE ══════════════════════════════════════════════════════════════
+function renderAttendance() {
+  const el = $('att-list');
+  if (!S.workers.length) {
+    el.innerHTML = '<div class="empty"><i data-lucide="users"></i><div>Add workers first.</div></div>';
+    lucide.createIcons(); return;
+  }
+  const statusLabel = { present:'Present', absent:'Absent', half:'Half Day' };
+  const statusClass = { present:'att-present', absent:'att-absent', half:'att-half' };
+  el.innerHTML = S.workers.map(w => `
+    <div class="w-row">
+      <div class="avatar">${initials(w.name)}</div>
+      <div style="flex:1;">
+        <div class="w-name">${w.name}</div>
+        <div class="w-sub">${w.trade}</div>
+      </div>
+      <button class="att ${statusClass[w.status]}" onclick="cycleStatus(${w.id})">${statusLabel[w.status]}</button>
+    </div>`).join('');
+  lucide.createIcons();
+  refreshStats();
+}
+
+function cycleStatus(id) {
+  const w = S.workers.find(x => x.id === id);
+  const cycle = { absent:'present', present:'half', half:'absent' };
+  const labels = { present:'Present', half:'Half Day', absent:'Absent' };
+  const colors = { present:'#16a34a', half:'#d97706', absent:'#dc2626' };
+  w.status = cycle[w.status];
+  pushAct(`${w.name} marked as ${labels[w.status]}`, colors[w.status]);
+  renderAttendance();
+}
+
+function markAll(status) {
+  S.workers.forEach(w => w.status = status);
+  pushAct(`All workers marked ${status === 'present' ? 'Present' : 'Absent'}`, status === 'present' ? '#16a34a' : '#dc2626');
+  renderAttendance();
+  toast(`All marked ${status === 'present' ? 'Present ✅' : 'Absent ❌'}`);
+}
+
+// ═══ WORKERS ═════════════════════════════════════════════════════════════════
+function addWorker() {
+  const name  = $('w-name').value.trim();
+  const trade = $('w-trade').value;
+  const phone = $('w-phone').value.trim();
+  if (!name)  { toast('⚠️ Enter worker name'); return; }
+  if (!trade) { toast('⚠️ Select a trade / role'); return; }
+  S.workers.push({ id: S.nextId++, name, trade, phone, status:'absent' });
+  $('w-name').value = ''; $('w-phone').value = ''; $('w-trade').value = '';
+  pushAct(`Worker added: ${name} (${trade})`, '#0A244A');
+  renderWorkers();
+  renderAttendance();
+  refreshStats();
+  toast('✅ Worker added!');
+}
+
+// Custom confirm (replaces browser confirm which can block on some devices)
+let _confirmResolve = null;
+function confirmDialog(title, msg) {
+  $('confirm-title').textContent = title;
+  $('confirm-msg').textContent   = msg;
+  $('confirm-overlay').classList.add('open');
+  return new Promise(res => _confirmResolve = res);
+}
+function confirmResolve(val) {
+  $('confirm-overlay').classList.remove('open');
+  if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
+}
+
+async function deleteWorker(id) {
+  const w = S.workers.find(x => x.id === id);
+  const ok = await confirmDialog(`Remove ${w.name}?`, 'This worker will be removed from the roster.');
+  if (!ok) return;
+  S.workers = S.workers.filter(x => x.id !== id);
+  pushAct(`Worker removed: ${w.name}`, '#dc2626');
+  renderWorkers();
+  renderAttendance();
+  refreshStats();
+  toast('🗑️ Worker removed');
+}
+
+function renderWorkers() {
+  $('w-count').textContent = S.workers.length;
+  const el = $('w-list');
+  if (!S.workers.length) {
+    el.innerHTML = '<div class="empty"><i data-lucide="users"></i><div>No workers added yet.</div></div>';
+    lucide.createIcons(); return;
+  }
+  const statusLabel = { present:'Present', absent:'Absent', half:'Half' };
+  const statusClass = { present:'att-present', absent:'att-absent', half:'att-half' };
+  el.innerHTML = S.workers.map(w => `
+    <div class="w-row">
+      <div class="avatar">${initials(w.name)}</div>
+      <div style="flex:1;">
+        <div class="w-name">${w.name}</div>
+        <div class="w-sub">${w.trade}${w.phone ? ' · ' + w.phone : ''}</div>
+      </div>
+      <span class="att ${statusClass[w.status]}" style="margin-right:8px;cursor:default;">${statusLabel[w.status]}</span>
+      <button class="btn-icon del" onclick="deleteWorker(${w.id})" title="Remove worker">
+        <i data-lucide="trash-2"></i>
+      </button>
+    </div>`).join('');
+  lucide.createIcons();
+}
+
+// ═══ MATERIALS ═══════════════════════════════════════════════════════════════
+function addMaterial() {
+  const type = $('mat-type').value;
+  const qty  = parseInt($('mat-qty').value);
+  const note = $('mat-note').value.trim();
+  if (!type)      { toast('⚠️ Select a material type'); return; }
+  if (!qty || qty < 1) { toast('⚠️ Enter a valid quantity'); return; }
+  S.materials.push({ id: Date.now(), type, qty, note, time: nowStr() });
+  $('mat-type').value = ''; $('mat-qty').value = ''; $('mat-note').value = '';
+  pushAct(`Material: ${type} × ${qty}`, '#F97316');
+  renderMaterials();
+  refreshStats();
+  toast('✅ Material logged!');
+}
+
+function deleteMaterial(id) {
+  const m = S.materials.find(x => x.id === id);
+  S.materials = S.materials.filter(x => x.id !== id);
+  pushAct(`Material removed: ${m.type}`, '#dc2626');
+  renderMaterials();
+  refreshStats();
+  toast('🗑️ Removed');
+}
+
+function renderMaterials() {
+  const el = $('mat-list');
+  if (!S.materials.length) {
+    el.innerHTML = '<div class="empty"><i data-lucide="package"></i><div>No materials logged yet.</div></div>';
+    lucide.createIcons(); return;
+  }
+  el.innerHTML = S.materials.map(m => `
+    <div class="mat-row">
+      <div class="mat-ico"><i data-lucide="package"></i></div>
+      <div style="flex:1;">
+        <div class="mat-name">${m.type}</div>
+        <div class="mat-note">${m.note || '—'} · ${m.time}</div>
+      </div>
+      <span class="chip chip-orange">${m.qty}</span>
+      <button class="btn-icon del" style="margin-left:8px;" onclick="deleteMaterial(${m.id})">
+        <i data-lucide="trash-2"></i>
+      </button>
+    </div>`).join('');
+  lucide.createIcons();
+}
+
+// ═══ LOGS ════════════════════════════════════════════════════════════════════
+function addLog() {
+  const work  = $('log-work').value.trim();
+  const cat   = $('log-cat').value;
+  const notes = $('log-notes').value.trim();
+  if (!work) { toast('⚠️ Describe the work completed'); return; }
+  S.logs.unshift({ id: Date.now(), work, cat, notes, time: nowStr() });
+  $('log-work').value = ''; $('log-notes').value = '';
+  pushAct(`Log: ${work}`, LOG_COLORS[cat] || '#0A244A');
+  renderLogs();
+  refreshStats();
+  toast('✅ Log submitted!');
+}
+
+function deleteLog(id) {
+  S.logs = S.logs.filter(x => x.id !== id);
+  renderLogs();
+  refreshStats();
+  toast('🗑️ Log removed');
+}
+
+function renderLogs() {
+  const el = $('log-list');
+  if (!S.logs.length) {
+    el.innerHTML = '<div class="empty"><i data-lucide="clipboard-list"></i><div>No logs yet today.</div></div>';
+    lucide.createIcons(); return;
+  }
+  el.innerHTML = S.logs.map(l => `
+    <div class="log-row">
+      <div class="log-dot" style="background:${LOG_COLORS[l.cat]||'#0A244A'};"></div>
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <div class="log-work">${l.work}</div>
+          <span class="log-cat">${l.cat}</span>
+        </div>
+        ${l.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${l.notes}</div>` : ''}
+        <div class="log-time">${l.time}</div>
+      </div>
+      <button class="btn-icon del" onclick="deleteLog(${l.id})"><i data-lucide="trash-2"></i></button>
+    </div>`).join('');
+  lucide.createIcons();
+}
+
+// ═══ SUMMARY ═════════════════════════════════════════════════════════════════
+let chartAtt = null, chartMat = null;
+
+function renderSummary() {
+  $('sum-date').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  const present = S.workers.filter(w => w.status === 'present').length;
+  const absent  = S.workers.filter(w => w.status === 'absent').length;
+  const half    = S.workers.filter(w => w.status === 'half').length;
+  $('sum-present').textContent = present;
+  $('sum-absent').textContent  = absent;
+  $('sum-mats').textContent    = S.materials.length;
+  $('sum-logs').textContent    = S.logs.length;
+
+  // Attendance doughnut
+  if (chartAtt) chartAtt.destroy();
+  chartAtt = new Chart($('att-chart').getContext('2d'), {
+    type: 'doughnut',
+    data: { labels:['Present','Absent','Half Day'], datasets:[{ data:[present,absent,half], backgroundColor:['#16a34a','#dc2626','#d97706'], borderWidth:0 }] },
+    options: { plugins:{ legend:{ position:'bottom' } }, cutout:'65%', maintainAspectRatio:false }
+  });
+
+  // Material bar
+  if (chartMat) chartMat.destroy();
+  const matKeys   = [...new Set(S.materials.map(m => m.type.split(' ')[0]))];
+  const matVals   = matKeys.map(k => S.materials.filter(m => m.type.startsWith(k)).reduce((s,m) => s + m.qty, 0));
+  chartMat = new Chart($('mat-chart').getContext('2d'), {
+    type: 'bar',
+    data: { labels: matKeys.length ? matKeys : ['No Data'], datasets:[{ data: matVals.length ? matVals : [0], backgroundColor:'#F97316', borderRadius:6 }] },
+    options: { plugins:{ legend:{ display:false } }, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
+  });
+
+  $('sum-mat-items').innerHTML = S.materials.length
+    ? S.materials.map(m => `<div class="mat-row"><div class="mat-ico"><i data-lucide="package"></i></div><div class="mat-name" style="flex:1;">${m.type}</div><span class="chip chip-orange">${m.qty}</span></div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;">None logged.</div>';
+
+  $('sum-log-items').innerHTML = S.logs.length
+    ? S.logs.map(l => `<div class="log-row"><div class="log-dot" style="background:${LOG_COLORS[l.cat]||'#0A244A'};"></div><div><div class="log-work">${l.work}</div><div class="log-time">${l.time}</div></div></div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;">None logged.</div>';
+
+  lucide.createIcons();
+}
+
+// ═══ WHATSAPP ════════════════════════════════════════════════════════════════
+function buildWAText() {
+  const today   = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const present = S.workers.filter(w => w.status === 'present');
+  const absent  = S.workers.filter(w => w.status === 'absent');
+  const half    = S.workers.filter(w => w.status === 'half');
+
+  let msg = `🏗️ *BuildHQ – Daily Site Report*\n`;
+  msg += `📅 ${today}\n📍 Site Alpha\n`;
+  msg += `─────────────────────\n\n`;
+  msg += `👷 *ATTENDANCE (${S.workers.length} total)*\n`;
+  msg += `✅ Present (${present.length}): ${present.map(w=>w.name).join(', ')||'None'}\n`;
+  if (half.length) msg += `🌓 Half Day (${half.length}): ${half.map(w=>w.name).join(', ')}\n`;
+  msg += `❌ Absent (${absent.length}): ${absent.map(w=>w.name).join(', ')||'None'}\n`;
+
+  if (S.materials.length) {
+    msg += `\n📦 *MATERIALS USED*\n`;
+    S.materials.forEach(m => { msg += `• ${m.type}: ${m.qty}${m.note?' ('+m.note+')':''}\n`; });
+  }
+  if (S.logs.length) {
+    msg += `\n📋 *DAILY LOGS*\n`;
+    S.logs.forEach(l => { msg += `• [${l.cat}] ${l.work}${l.notes?' – '+l.notes:''}\n`; });
+  }
+  msg += `\n─────────────────────\n_Sent via BuildHQ_ 🔨`;
+  return msg;
+}
+
+function openWA() {
+  $('wa-preview').textContent = buildWAText();
+  $('wa-overlay').classList.add('open');
+  lucide.createIcons();
+}
+function closeWA() { $('wa-overlay').classList.remove('open'); }
+function copyWA()  { navigator.clipboard.writeText(buildWAText()).then(() => toast('📋 Copied!')); }
+function sendWA()  { window.open('https://wa.me/?text=' + encodeURIComponent(buildWAText()), '_blank'); }
+
+// ═══ INIT ════════════════════════════════════════════════════════════════════
+function init() {
+  $('day-date').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
+  renderWorkers();
+  renderAttendance();
+  renderMaterials();
+  renderLogs();
+  renderActivity();
+  refreshStats();
+  lucide.createIcons();
+}
+
+init();
+</script>
+</body>
+</html>
